@@ -1,4 +1,5 @@
 """Charge les CSV Olist de data/raw/ dans une base SQLite (data/processed/olist.db)."""
+
 import csv
 import sqlite3
 import sys

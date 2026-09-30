@@ -15,5 +15,5 @@ SELECT MIN(order_purchase_timestamp) as first_purchase_date,
 
 -- Quel pourcentage des commandes n'a pas le statut delivered ?
 
-SELECT ROUND(100 * SUM(CASE WHEN order_status != 'delivered' THEN 1 ELSE 0 END) / COUNT(*), 2) as percentage_not_delivered
+SELECT ROUND(100.0 * SUM(CASE WHEN order_status != 'delivered' THEN 1 ELSE 0 END) / COUNT(*), 2) as percentage_not_delivered
 FROM orders;
