@@ -12,6 +12,9 @@ Consigner chaque décision : ce qui a été constaté, ce qui a été fait, comb
 | 2026-09-29 | order_items | Une ligne = un article, pas une commande : joindre `orders` à `order_items` produit une ligne par article, donc des commandes répétées | Compter les commandes avec `COUNT(DISTINCT order_id)` ; obtenir un montant par commande en regroupant par `order_id` ou en agrégeant `order_items` avant la jointure | `nb_lignes` = 112 650 ; `nb_commandes` = 98 666 (soit ~1,14 article par commande, 13 984 lignes supplémentaires) |
 | 2026-09-29 | orders / order_items | 775 commandes n'ont aucun article (99 441 − 98 666), presque toutes `unavailable` (78 %) ou `canceled` (21 %) : logique, un produit indisponible ou annulé n'est jamais expédié. Anomalies à examiner : 1 commande `shipped`, 2 `invoiced` et 5 `created` sans article | Utiliser `LEFT JOIN` pour conserver toutes les commandes dans la table d'analyse ; `JOIN` simple les ferait disparaître | 775 commandes sans article : unavailable 603, canceled 164, created 5, invoiced 2, shipped 1 |
 | 2026-09-29 | order_items | La colonne `order_item_quantity` n'existe pas : `order_item_id` est le numéro de l'article dans la commande (1, 2, 3...), pas une quantité | Montant d'une commande = `SUM(price)` ; frais de port = `SUM(freight_value)` ; nombre d'articles = `COUNT(*)` | — |
+| 2026-09-30 | table d'analyse | Construction du montant par commande : agrégation de `order_items` par `order_id` dans une sous-requête (`nb_articles`, `montant`, `frais_port`), puis `LEFT JOIN` depuis `orders` | Une ligne par commande, sans doublon ; les 99 441 commandes sont conservées. Contrôle : somme des montants = 13 591 643,70 dans la table d'analyse et dans `order_items` (identiques) | 99 441 (contrôlé) |
+| 2026-09-30 | table d'analyse | Les 775 commandes sans article n'ont ni montant ni frais de port | Conserver `NULL` plutôt que 0 : `AVG` et `SUM` ignorent les valeurs vides, donc le panier moyen n'est pas tiré vers le bas par des commandes qui n'ont jamais eu d'article ; `COALESCE(montant, 0)` reste possible au cas par cas | 775 (contrôlé) |
+| 2026-09-30 | table d'analyse | Chiffre d'affaires total des articles (hors frais de port) : 13 591 643,70 ; panier moyen ≈ 137,75 sur les 98 666 commandes avec articles | Utiliser `price` seul comme « montant » ; les frais de port restent une colonne distincte | — |
 
 ## Enseignements techniques
 
@@ -21,11 +24,8 @@ Consigner chaque décision : ce qui a été constaté, ce qui a été fait, comb
 - **Vérifier les noms de colonnes** avant d'écrire une requête (`.schema order_items` dans le shell, ou `sql/00_schema.sql`). Une colonne supposée mais inexistante bloque la requête.
 - **Grain d'une table :** avant toute jointure, se demander « une ligne = quoi ? » (article, commande, client). Joindre deux tables de grains différents multiplie les lignes.
 - **`JOIN` contre `LEFT JOIN` :** `JOIN` ne garde que les lignes qui ont une correspondance des deux côtés ; `LEFT JOIN` garde toutes les lignes de la table de gauche. `WHERE table_droite.cle IS NULL` isole les lignes sans correspondance.
+- **Agréger avant de joindre :** pour obtenir un total par commande, calculer les sommes dans une sous-requête regroupée par `order_id`, puis la joindre à `orders`. La sous-requête doit avoir un alias.
+- **`NULL` n'est pas 0 :** une valeur vide signifie « pas de donnée », et 0 signifie « valeur nulle ». Les fonctions d'agrégation ignorent `NULL`, ce qui protège les moyennes.
+- **Trois contrôles après chaque construction de table :** nombre de lignes attendu, somme comparée à la table source, nombre de valeurs vides attendu.
 - **Les décisions de périmètre se consignent ici :** chaque exclusion de lignes doit figurer avec son motif et son effectif.
 
-## À traiter
-
-- Examiner les 8 commandes sans article dont le statut n'est ni `unavailable` ni `canceled` (1 `shipped`, 2 `invoiced`, 5 `created`) : erreur de saisie ou commandes en cours ?
-- Vérifier les volumes de commandes par mois (notamment fin 2016 et fin 2018).
-- Contrôler les commandes `delivered` sans date de livraison (`sql/01_controle_qualite.sql`).
-- Examiner les commandes avec plusieurs avis avant toute jointure avec `order_reviews`.
