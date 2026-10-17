@@ -75,4 +75,4 @@ Jeu de données dérivé du jeu public Olist (e-commerce brésilien) : https://w
 ## Auteur
 
 **DONGMO FEUDJIO Divin Virlence** : Analyste de données junior
-[Portfolio](https://dongmo-feudjio-portfolio.netlify.app) · [LinkedIn](https://www.linkedin.com/in/virlence-dongmo-a2286030a) · [Email] (mailto:dongmovirlence@gmail.com)
+[Portfolio](https://dongmo-feudjio-portfolio.netlify.app) · [LinkedIn](https://www.linkedin.com/in/virlence-dongmo-a2286030a)
