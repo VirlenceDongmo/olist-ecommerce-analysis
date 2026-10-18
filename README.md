@@ -15,7 +15,7 @@ Elle est décomposée en quatre sous-questions :
 
 ## Aperçu du tableau de bord
 
-![Tableau de bord](images/dashboard.png)
+![Tableau de bord](images/dash.png)
 
 ## Résultats principaux
 
